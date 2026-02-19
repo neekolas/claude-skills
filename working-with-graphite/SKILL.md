@@ -2,7 +2,7 @@
 name: working-with-graphite
 description: Use when managing Git branches and PRs with the Graphite CLI (gt). Covers creating stacked PRs, modifying mid-stack, submitting, syncing, and resolving conflicts.
 user-invocable: true
-allowed-tools: Bash(gt *), Read, Grep, Glob
+allowed-tools: Bash(gt *), Bash(gh *), Bash(git *), Read, Grep, Glob
 argument-hint: "[action] e.g. create, modify, submit, sync, restack"
 ---
 
@@ -25,8 +25,14 @@ argument-hint: "[action] e.g. create, modify, submit, sync, restack"
 
 - When the task is complete, always `gt restack` and ensure that any impacted upstack branches are still valid (lint checks pass)
 - Use `gt submit --stack --update-only` when tasks are complete
-- Only submit a new branch with the user's explicit consent.
-- New branches are always initially submitted as a draft
+- If the changes are material, read the existing PR description and incorporate the changes. Do not overwrite the existing description losing important context.
+- Present any changes to the PR description to the user for approval
+
+## Creating PR's
+- Only submit a new PR with the user's explicit consent.
+- Create the PR with `gt submit --draft`. Always submit new PR's as a draft.
+- After submitting the PR, create a detailed PR description and submit it using the `gh` tool
+- Ask the user for approval before submitting the PR description
 
 ## Handling Conflicts
 
