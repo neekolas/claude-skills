@@ -15,6 +15,13 @@ argument-hint: "[action] e.g. create, modify, submit, sync, restack"
 3. **Never use raw Git rebase** -- always use `gt` commands to preserve stack metadata
 4. Always set Claude as the co-author when committing
 
+## Branch Strategy
+
+- When creating plans, include the expected branches for each unit of work
+- Pieces of work that span > 500 LOC should be broken into multiple branches and stacked onto one another
+- Stack branches in a logical order, with discrete features in each branch.
+- Each branch must be able to pass all lint, check, and test evaluations
+
 ## Committing code
 
 - Manually stage changes to impacted files using git commands. Do not use the `-a` flag to automatically stage all changes.
