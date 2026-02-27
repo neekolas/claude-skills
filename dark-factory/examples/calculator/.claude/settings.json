@@ -1,0 +1,9 @@
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "command": "echo 'CONDUCTOR_CONTEXT_LIMIT_REACHED' && exit 1"
+      }
+    ]
+  }
+}

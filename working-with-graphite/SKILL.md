@@ -1,6 +1,6 @@
 ---
 name: working-with-graphite
-description: Use when managing Git branches and PRs with the Graphite CLI (gt). Covers creating stacked PRs, modifying mid-stack, submitting, syncing, and resolving conflicts.
+description: Use when managing branches and PRs with the Graphite CLI (gt). Covers creating stacked PRs, modifying mid-stack, submitting, syncing, and resolving conflicts.
 user-invocable: true
 allowed-tools: Bash(gt *), Bash(gh *), Bash(git *), Read, Grep, Glob
 argument-hint: "[action] e.g. create, modify, submit, sync, restack"
