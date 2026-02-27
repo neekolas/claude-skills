@@ -264,6 +264,36 @@ describe("TaskGraph", () => {
 		expect(tg.transitiveDownstream("T004")).toEqual([]);
 	});
 
+	test("readyTaskIds returns IDs of tasks that are ready", async () => {
+		const tg = await TaskGraph.load(graphPath);
+		const ids = tg.readyTaskIds();
+
+		expect(ids).toBeInstanceOf(Set);
+		// T002 depends on T001(complete) → ready
+		// T003 depends on T001(complete) + T002(pending) → not ready
+		// T004 has no deps → ready
+		expect(ids).toEqual(new Set(["T002", "T004"]));
+	});
+
+	test("readyTaskIds updates after status changes", async () => {
+		const tg = await TaskGraph.load(graphPath);
+
+		// Complete T002 → T003 should become ready
+		await tg.setStatus("T002", "complete");
+		const ids = tg.readyTaskIds();
+		expect(ids).toEqual(new Set(["T003", "T004"]));
+	});
+
+	test("readyTaskIds treats failed and skipped deps as terminal", async () => {
+		const tg = await TaskGraph.load(graphPath);
+
+		await tg.setStatus("T002", "failed");
+		const ids = tg.readyTaskIds();
+		// T003 depends on T001(complete) + T002(failed) → ready (both terminal)
+		// T004 has no deps → ready
+		expect(ids).toEqual(new Set(["T003", "T004"]));
+	});
+
 	test("transitiveUpstream returns all transitive dependencies", async () => {
 		const tg = await TaskGraph.load(graphPath);
 

@@ -51,7 +51,7 @@ export class TaskGraph {
 		}
 	}
 
-	readyTasks(): ReadyTask[] {
+	readyTaskIds(): Set<string> {
 		const terminalIds = new Set<string>();
 		for (const [id, task] of Object.entries(this.data.tasks)) {
 			if (TERMINAL_STATUSES.includes(task.status)) {
@@ -59,21 +59,28 @@ export class TaskGraph {
 			}
 		}
 
-		const ready: ReadyTask[] = [];
+		const ready = new Set<string>();
 		for (const [id, task] of Object.entries(this.data.tasks)) {
 			if (task.status !== "pending") continue;
 			if (!task.dependencies.every((dep) => terminalIds.has(dep))) continue;
+			ready.add(id);
+		}
+		return ready;
+	}
 
-			const model = modelForComplexity(task.complexity);
+	readyTasks(): ReadyTask[] {
+		const readyIds = this.readyTaskIds();
+		const ready: ReadyTask[] = [];
+		for (const id of readyIds) {
+			const task = this.data.tasks[id]!;
 			ready.push({
 				id,
 				title: task.title,
 				complexity: task.complexity,
-				model,
+				model: modelForComplexity(task.complexity),
 				file: task.file,
 			});
 		}
-
 		return ready.sort((a, b) => a.id.localeCompare(b.id));
 	}
 
