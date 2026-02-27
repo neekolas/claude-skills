@@ -9,7 +9,6 @@ import { getCommand } from "./commands/get.js";
 import { initCommand } from "./commands/init.js";
 import { listCommand } from "./commands/list.js";
 import { moveDepsCommand } from "./commands/move-deps.js";
-import { readyCommand } from "./commands/ready.js";
 import { setStatusCommand } from "./commands/set-status.js";
 import { statusCommand } from "./commands/status.js";
 import { taskStateCommand } from "./commands/task-state.js";
@@ -21,7 +20,6 @@ const program = new Command()
 	.version("2.0.0");
 
 program.addCommand(statusCommand);
-program.addCommand(readyCommand);
 program.addCommand(getCommand);
 program.addCommand(setStatusCommand);
 program.addCommand(addTaskCommand);
