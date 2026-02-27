@@ -6,6 +6,7 @@ import type {
 	TaskStatus,
 	TaskSummary,
 } from "../config/types.js";
+import { modelForComplexity } from "./model.js";
 
 const TERMINAL_STATUSES: TaskStatus[] = ["complete", "failed", "skipped"];
 
@@ -63,7 +64,7 @@ export class TaskGraph {
 			if (task.status !== "pending") continue;
 			if (!task.dependencies.every((dep) => terminalIds.has(dep))) continue;
 
-			const model = task.complexity === "low" ? "claude-sonnet-4-6" : "claude-opus-4-6";
+			const model = modelForComplexity(task.complexity);
 			ready.push({
 				id,
 				title: task.title,

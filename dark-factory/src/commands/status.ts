@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { Command } from "commander";
 import { requireJobOption } from "../config/job.js";
+import { modelForComplexity } from "../core/model.js";
 import { TaskGraph } from "../core/task-graph.js";
 
 const STATUS_ICONS: Record<string, string> = {
@@ -38,7 +39,7 @@ export const statusCommand = new Command("status")
       const task = tg.getTask(id);
       if (!task) continue;
       const icon = STATUS_ICONS[task.status] ?? "[ ]";
-      const model = task.complexity === "low" ? "sonnet" : "opus";
+      const model = modelForComplexity(task.complexity).replace(/^claude-|-\d.*$/g, "");
       console.log(
         `  ${icon} ${id}: ${task.title} (${task.complexity}, ${model})`,
       );
