@@ -9,12 +9,6 @@ description: Use when converting architecture or design documents into structure
 
 Extract every implementation task from architecture document(s) into a structured JSON task graph. The output is a DAG of tasks sized for autonomous agent workers — each task self-contained, dependency-ordered, and verifiable without access to the full architecture.
 
-## When to Use
-
-- Converting architecture/design docs into a dark-factory task graph
-- Running `dark-factory extract-tasks`
-- Breaking a spec into parallelizable implementation units
-
 ## Before Planning Begins
 
 1. **Get existing state**: Run `dark-factory list --job $JOB --status pending --include-content` to see outstanding tasks already in the graph
