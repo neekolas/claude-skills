@@ -4,7 +4,6 @@ import { dirname, join } from "node:path";
 import { Command } from "commander";
 import { requireJobOption } from "../config/job.js";
 import type { Complexity, TaskGraphData } from "../config/types.js";
-import { autoCommit } from "../core/auto-commit.js";
 import { exec } from "../core/exec.js";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -279,16 +278,6 @@ export const extractTasksCommand = new Command("extract-tasks")
         job.tasks_dir,
       );
 
-      // Collect written files for auto-commit
-      const writtenFiles = [
-        paths.taskGraph,
-        ...extraction.tasks.map((t) => join(paths.tasksDir, `${t.id}.md`)),
-      ];
-      await autoCommit(
-        writtenFiles,
-        `feat: extract ${taskCount} tasks for job "${job.name}"`,
-        projectRoot,
-      );
 
       console.log(`Extracted ${taskCount} tasks for job "${job.name}"`);
     } finally {

@@ -1,7 +1,6 @@
 import { resolve } from "node:path";
 import { Command } from "commander";
 import { requireJobOption } from "../config/job.js";
-import { autoCommit } from "../core/auto-commit.js";
 import { TaskGraph } from "../core/task-graph.js";
 
 export const moveDepsCommand = new Command("move-deps")
@@ -26,9 +25,4 @@ export const moveDepsCommand = new Command("move-deps")
     for (const id of affected) {
       console.log(`  Updated: ${id}`);
     }
-    await autoCommit(
-      [paths.taskGraph],
-      `dark-factory: move deps from ${opts.from} to ${toIds.join(",")}`,
-      projectRoot,
-    );
   });

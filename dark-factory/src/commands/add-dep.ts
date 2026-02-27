@@ -1,7 +1,6 @@
 import { resolve } from "node:path";
 import { Command } from "commander";
 import { requireJobOption } from "../config/job.js";
-import { autoCommit } from "../core/auto-commit.js";
 import { TaskGraph } from "../core/task-graph.js";
 
 export const addDepCommand = new Command("add-dep")
@@ -16,9 +15,4 @@ export const addDepCommand = new Command("add-dep")
 		const tg = await TaskGraph.load(paths.taskGraph);
 		await tg.addDep(taskId, depId);
 		console.log(`${taskId} now depends on ${depId}`);
-		await autoCommit(
-			[paths.taskGraph],
-			`dark-factory: add dependency ${taskId} → ${depId}`,
-			projectRoot,
-		);
 	});

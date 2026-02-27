@@ -84,7 +84,7 @@ For each ready task:
    - Strengthen acceptance criteria if they are ambiguous given the current codebase.
 3. Write the updated task file back. Preserve the existing structure — refine, don't rewrite.
 
-## Step 3: Worktree Creation + Test Scaffolding
+## Step 3: Worktree Creation
 
 For each refined task:
 
@@ -102,10 +102,10 @@ For each refined task:
 3. Dispatch parallel test-scaffolding sub-agents (one per task). Use the Task tool with:
    - **Working directory**: the task's worktree path
    - **Model**: always Opus (test design is high-reasoning work)
-   - **Prompt**: Include the full task file contents, verification steps, and relevant context files. Instruct the agent to:
+   - **Prompt**: Include the full task file contents
+   -  Instruct the agent to:
      - Write failing test scaffolds that cover every acceptance criterion
      - Tests must fail for the right reasons (missing implementation, not syntax errors)
-     - Create a `.df-scaffolds-ready` marker file when done
      - Do NOT implement the feature -- only write tests
 
 4. After all scaffold agents complete, verify scaffold quality:
@@ -187,10 +187,6 @@ Based on evaluation results:
    - Corrections to assumptions that turned out to be wrong
 
    If any downstream task specs need updates, modify them and commit:
-   ```bash
-   git add jobs/<job>/tasks/<modified-task-ids>.md
-   git commit -m "dark-factory: propagate learnings from <task-id> to downstream tasks"
-   ```
 4. If the result file suggests future work, do NOT blindly create tasks. Dispatch a sub-agent to evaluate each suggestion:
    - Is the suggested work duplicative of any pending or in-progress task? If so, either ignore it or enrich the existing task with the new details.
    - Is the suggested work actually valuable given the project's high-level architecture and goals? Workers have narrow context — their suggestions may be out of scope or premature.

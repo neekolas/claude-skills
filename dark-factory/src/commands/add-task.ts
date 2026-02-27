@@ -3,7 +3,6 @@ import { dirname, join, resolve } from "node:path";
 import { Command } from "commander";
 import { requireJobOption } from "../config/job.js";
 import type { Complexity } from "../config/types.js";
-import { autoCommit } from "../core/auto-commit.js";
 import { TaskGraph } from "../core/task-graph.js";
 
 export const addTaskCommand = new Command("add-task")
@@ -66,5 +65,4 @@ export const addTaskCommand = new Command("add-task")
 
 		console.log(`Created ${taskId}: ${opts.title}`);
 		console.log(`  File: ${relPath}`);
-		await autoCommit([paths.taskGraph, absPath], `dark-factory: add task ${taskId}`, projectRoot);
 	});

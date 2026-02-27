@@ -2,7 +2,6 @@ import { resolve } from "node:path";
 import { Command } from "commander";
 import { requireJobOption } from "../config/job.js";
 import type { TaskStatus } from "../config/types.js";
-import { autoCommit } from "../core/auto-commit.js";
 import { TaskGraph } from "../core/task-graph.js";
 
 const VALID_STATUSES: TaskStatus[] = ["pending", "in-progress", "complete", "failed", "skipped"];
@@ -23,9 +22,4 @@ export const setStatusCommand = new Command("set-status")
 		const tg = await TaskGraph.load(paths.taskGraph);
 		await tg.setStatus(taskId, status);
 		console.log(`${taskId} → ${status}`);
-		await autoCommit(
-			[paths.taskGraph],
-			`dark-factory: set ${taskId} status to ${status}`,
-			projectRoot,
-		);
 	});
