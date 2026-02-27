@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "dark-factory": "./dark-factory/src/cli.ts"
+    "dark-factory": "./src/cli.ts"
   },
   "scripts": {
-    "start": "bun dark-factory/src/cli.ts",
+    "start": "bun src/cli.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "lint:fix": "oxlint --fix-dangerously dark-factory/",
-    "lint": "oxlint dark-factory/src/",
-    "format": "oxlint --fix dark-factory/src/"
+    "lint:fix": "oxlint --fix-dangerously src/",
+    "lint": "oxlint src/",
+    "format": "oxlint --fix src/"
   },
   "dependencies": {
     "commander": "^13.0.0",
@@ -21,6 +21,6 @@
     "@types/bun": "^1.2.0",
     "typescript": "^5.7.0"
   },
-  "module": "dark-factory/index.ts",
+  "module": "index.ts",
   "private": true
 }

@@ -12,6 +12,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["dark-factory/src/**/*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
 }
