@@ -65,3 +65,14 @@ export interface JobConfig {
 	model: string;
 	created_at: string;
 }
+
+// Output shape for list command
+export interface ListTask {
+	id: string;
+	title: string;
+	status: TaskStatus;
+	complexity: Complexity;
+	model: string;
+	dependencies: string[];
+	content?: string;
+}
