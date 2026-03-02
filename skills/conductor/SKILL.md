@@ -223,7 +223,7 @@ Based on evaluation results:
 
 ## Step 7: Loop
 
-**Eager dispatch**: Every time a task completes evaluation (pass or fail), immediately run `dark-factory ready --job <job> --json` to check for newly unblocked tasks. A completed task may satisfy dependencies that make new tasks ready — do not wait for the entire batch to finish before starting the next round.
+**Eager dispatch**: Every time a task completes evaluation (pass or fail), immediately run `dark-factory list --ready --job <job> --json` to check for newly unblocked tasks. A completed task may satisfy dependencies that make new tasks ready — do not wait for the entire batch to finish before starting the next round.
 
 Continue until:
 

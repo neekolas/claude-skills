@@ -74,7 +74,7 @@ In another terminal:
 ```bash
 dark-factory status --job my-feature         # Human-readable summary
 dark-factory status --job my-feature --json   # Machine-readable
-dark-factory ready --job my-feature           # Tasks ready for work
+dark-factory list --ready --job my-feature     # Tasks ready for work
 ```
 
 ## What the Conductor Does
@@ -83,7 +83,7 @@ The conductor skill runs inside each Claude session and follows a 7-step pipelin
 
 | Step | Action |
 |------|--------|
-| **1. Find ready tasks** | `dark-factory ready --job <job> --json` — tasks with all dependencies satisfied |
+| **1. Find ready tasks** | `dark-factory list --ready --job <job> --json` — tasks with all dependencies satisfied |
 | **2. Refine task** | Read task spec, cross-reference with codebase state, update file paths and integration points |
 | **3. Scaffold tests** | Create worktree, dispatch sub-agent to write failing tests covering acceptance criteria |
 | **4. Implement** | Dispatch worker sub-agent to make the failing tests pass |
@@ -104,7 +104,7 @@ Key behaviors:
 | Command | Description |
 |---------|-------------|
 | `init --name <n> --architecture <paths...>` | Create a new job with scaffolding and git branch |
-| `extract-tasks --job <j> [--dry-run]` | Extract tasks from architecture docs via Claude |
+| `extract-tasks --job <j> [--model <m>] [--dry-run]` | Extract tasks from architecture docs via Claude |
 | `current-job` | Print the active job name from the current git branch |
 
 ### Task Visibility
@@ -112,10 +112,9 @@ Key behaviors:
 | Command | Description |
 |---------|-------------|
 | `status --job <j> [--json]` | Task graph summary (counts by status) |
-| `ready --job <j> [--json]` | List tasks with all dependencies satisfied |
 | `get --job <j> <task-id>` | Print full task markdown |
 | `task-state --job <j> <task-id>` | Derive recovery state from durable artifacts |
-| `list --job <j> [--after\|--before <id>] [--json]` | List tasks with transitive dependency filtering |
+| `list --job <j> [--after\|--before <id>] [--ready] [--status <s>] [--include-content] [--json]` | List tasks with composable filters |
 | `dependents --job <j> <task-id> [--json]` | List tasks that depend on a given task |
 
 ### Task Mutations
@@ -150,7 +149,7 @@ dark-factory/
 │   │   ├── task-graph.ts         # TaskGraph class (in-memory + persistence)
 │   │   ├── worktree.ts           # Git worktree operations
 │   │   ├── exec.ts               # Subprocess execution
-│   │   └── auto-commit.ts        # Git staging + commit helper
+│   │   └── model.ts              # Model selection by complexity
 │   ├── commands/                  # One file per command
 │   │   └── worktree/             # Worktree subcommands
 │   └── logging/
@@ -180,6 +179,6 @@ jobs/<job-name>/
 ```bash
 bun test          # Run tests
 bun run typecheck # Type-check
-bun run lint      # Lint with Biome
-bun run format    # Format with Biome
+bun run lint      # Lint with Oxlint
+bun run format    # Format with Oxlint
 ```
