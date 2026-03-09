@@ -1,6 +1,8 @@
 ---
 name: dark-factory:conductor
 description: Orchestrate autonomous task execution. Guides an Opus session through task refinement, test scaffolding, parallel worker dispatch, verification, and failure resolution.
+disable-model-invocation: true
+model: opus
 ---
 
 # Dark Factory Conductor

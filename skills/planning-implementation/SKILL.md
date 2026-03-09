@@ -1,6 +1,7 @@
 ---
 name: planning-implementation
 description: Use when converting architecture or design documents into structured, dependency-ordered implementation task lists for autonomous agent execution via dark-factory
+disable-model-invocation: true
 ---
 
 # Planning Implementation
