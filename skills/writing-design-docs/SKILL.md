@@ -1,6 +1,7 @@
 ---
 name: writing-design-docs
 description: Use when starting any feature, system change, or bugfix that requires architectural decisions — before writing implementation plans or code. Triggers on new projects, multi-component changes, API design, or when the user says "design", "spec", or "architecture".
+model: opus
 ---
 
 # Writing Design Docs
@@ -132,7 +133,7 @@ Concrete commands to prove correctness. Include linting and formatting checks.
 
 | Mistake | Fix |
 |---------|-----|
-| Testing as afterthought | Write Testing first — it clarifies what you're building |
+| Testing as afterthought | Use red/green TDD with test cases defined in the spec |
 | Vague goals | Add numbers: "reduce p99 from 800ms to 200ms" |
 | Missing non-goals | Unstated scope = assumed in scope |
 | Implementation as design | Contracts and behavior, not code |
