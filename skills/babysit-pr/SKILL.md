@@ -1,11 +1,11 @@
 ---
 name: babysit-pr
-description: Use when monitoring a PR that needs CI fixes or review comment responses. Runs as a long-running session with intelligent sleep intervals. Handles failing checks, reviewer feedback, and pushes verified fixes autonomously.
+description: Use when monitoring a PR (or a full Graphite stack of PRs) that needs CI fixes or review comment responses. Runs as a long-running session with intelligent sleep intervals. Handles failing checks, reviewer feedback, and pushes verified fixes autonomously.
 ---
 
 # Babysit PR
 
-Autonomously monitor a PR, fix CI failures, respond to review comments, and push verified fixes. Runs as a **long-running session** — loops internally with intelligent sleep intervals until the PR is ready or the user stops the session.
+Autonomously monitor a PR (or an entire Graphite stack), fix CI failures, respond to review comments, and push verified fixes. Runs as a **long-running session** — loops internally with intelligent sleep intervals until all PRs are ready or the user stops the session.
 
 ## Invocation
 
@@ -17,85 +17,84 @@ Autonomously monitor a PR, fix CI failures, respond to review comments, and push
 
 The skill runs in a continuous loop:
 
-1. Check PR status (CI + reviews)
-2. Fix issues if any
-3. If PR is ready → print success and exit
-4. Otherwise → sleep for an intelligent interval, then repeat
+1. Detect if the current branch is part of a Graphite stack
+2. Check PR status (CI + reviews) across all PRs in the stack
+3. Fix issues starting from the lowest affected branch
+4. If all PRs are ready → print success and exit
+5. Otherwise → sleep for an intelligent interval, then repeat
 
 ```dot
 digraph babysit {
     node [shape=box];
 
     "Start session" [shape=doublecircle];
-    "Check lockfile" [shape=diamond];
-    "Lock exists\nand PID alive?" [shape=diamond];
-    "Exit: already running" [shape=doubleoctagon];
-    "Acquire lock + trap cleanup";
-    "Find PR for current branch";
-    "PR exists?" [shape=diamond];
-    "Exit: no PR found" [shape=doubleoctagon];
-    "Check required CI\n(HEAD commit only)";
-    "Any checks failed?" [shape=diamond];
-    "Fix all failing checks";
-    "Note pending checks\nfor sleep interval";
-    "Process review comments\n(threads + general)";
-    "Any code changes?" [shape=diamond];
-    "Run local verification";
-    "Verification passes?" [shape=diamond];
-    "gt modify --commit\n+ gt submit";
-    "Log failure,\nskip push";
-    "All checks green +\nall comments addressed?" [shape=diamond];
-    "Print: PR is ready\nRelease lock" [shape=doubleoctagon];
+    "Detect Graphite stack\n(gt ls)";
+    "Collect PRs for\nall stack branches";
+    "Any PRs found?" [shape=diamond];
+    "Exit: no PRs found" [shape=doubleoctagon];
+    "For each PR\n(bottom of stack first):\ncheck CI + reviews";
+    "Any issues found\nacross stack?" [shape=diamond];
+    "For each branch (bottom-up):\nfix, verify, commit,\nrestack";
+    "gt submit --stack\n(single push)";
+    "All PRs: checks green +\ncomments addressed?" [shape=diamond];
+    "Print: Stack is ready" [shape=doubleoctagon];
     "Print remaining issues\n+ sleep interval";
     "Sleep with\nintelligent interval";
 
-    "Start session" -> "Check lockfile";
-    "Check lockfile" -> "Lock exists\nand PID alive?";
-    "Lock exists\nand PID alive?" -> "Exit: already running" [label="yes"];
-    "Lock exists\nand PID alive?" -> "Acquire lock + trap cleanup" [label="no"];
-    "Acquire lock + trap cleanup" -> "Find PR for current branch";
-    "Find PR for current branch" -> "PR exists?";
-    "PR exists?" -> "Exit: no PR found" [label="no"];
-    "PR exists?" -> "Check required CI\n(HEAD commit only)" [label="yes"];
-    "Check required CI\n(HEAD commit only)" -> "Any checks failed?";
-    "Any checks failed?" -> "Fix all failing checks" [label="yes"];
-    "Any checks failed?" -> "Note pending checks\nfor sleep interval" [label="no"];
-    "Fix all failing checks" -> "Note pending checks\nfor sleep interval";
-    "Note pending checks\nfor sleep interval" -> "Process review comments\n(threads + general)";
-    "Process review comments\n(threads + general)" -> "Any code changes?";
-    "Any code changes?" -> "All checks green +\nall comments addressed?" [label="no"];
-    "Any code changes?" -> "Run local verification" [label="yes"];
-    "Run local verification" -> "Verification passes?";
-    "Verification passes?" -> "gt modify --commit\n+ gt submit" [label="yes"];
-    "Verification passes?" -> "Log failure,\nskip push" [label="no"];
-    "gt modify --commit\n+ gt submit" -> "All checks green +\nall comments addressed?";
-    "Log failure,\nskip push" -> "All checks green +\nall comments addressed?";
-    "All checks green +\nall comments addressed?" -> "Print: PR is ready\nRelease lock" [label="yes"];
-    "All checks green +\nall comments addressed?" -> "Print remaining issues\n+ sleep interval" [label="no"];
+    "Start session" -> "Detect Graphite stack\n(gt ls)";
+    "Detect Graphite stack\n(gt ls)" -> "Collect PRs for\nall stack branches";
+    "Collect PRs for\nall stack branches" -> "Any PRs found?";
+    "Any PRs found?" -> "Exit: no PRs found" [label="no"];
+    "Any PRs found?" -> "For each PR\n(bottom of stack first):\ncheck CI + reviews" [label="yes"];
+    "For each PR\n(bottom of stack first):\ncheck CI + reviews" -> "Any issues found\nacross stack?";
+    "Any issues found\nacross stack?" -> "All PRs: checks green +\ncomments addressed?" [label="no"];
+    "Any issues found\nacross stack?" -> "For each branch (bottom-up):\nfix, verify, commit,\nrestack" [label="yes"];
+    "For each branch (bottom-up):\nfix, verify, commit,\nrestack" -> "gt submit --stack\n(single push)";
+    "gt submit --stack\n(single push)" -> "All PRs: checks green +\ncomments addressed?";
+    "All PRs: checks green +\ncomments addressed?" -> "Print: Stack is ready" [label="yes"];
+    "All PRs: checks green +\ncomments addressed?" -> "Print remaining issues\n+ sleep interval" [label="no"];
     "Print remaining issues\n+ sleep interval" -> "Sleep with\nintelligent interval";
-    "Sleep with\nintelligent interval" -> "Find PR for current branch" [label="loop"];
+    "Sleep with\nintelligent interval" -> "Detect Graphite stack\n(gt ls)" [label="loop"];
 }
 ```
 
-### 1. Concurrency Guard
+### 1. Detect Graphite Stack
 
-Run `lockguard.sh acquire` (in this skill's directory). If it exits non-zero, another session is running — exit immediately. The script handles PID-based stale lock detection and sets a trap to clean up on exit.
-
-### 2. Find PR
+Determine if the current branch is part of a stack:
 
 ```bash
-gh pr view --json number,url,headRefOid
+gt ls
 ```
 
-If no PR exists for the current branch, print an error and exit.
+This shows the full stack structure. Parse the output to get the ordered list of branches from bottom (closest to trunk) to top.
 
-### 3. Check Required CI
+If the branch is standalone (not part of a stack), treat it as a single-branch stack — the rest of the flow works the same way.
+
+### 2. Collect PRs Across the Stack
+
+For each branch in the stack (bottom to top), find its PR:
 
 ```bash
-gh pr checks --json name,state,bucket,link,required
+gh pr view <branch> --json number,url,headRefOid
 ```
 
-- Only act on checks for the **HEAD commit** — verify via `headRefOid` from step 2.
+Build a list of `(branch, pr_number, headRefOid)` tuples. Skip branches that don't have PRs yet.
+
+If no PRs exist for any branch, print an error and exit.
+
+### 3. Check CI and Reviews Across All PRs
+
+For **each PR** in the stack (processing bottom-up), run the CI and review checks described in steps 4a–4c below.
+
+Collect all issues into a list tagged by branch, so you know which branch to fix first. Then fix bottom-up per step 4.
+
+#### 3a. Check Required CI
+
+```bash
+gh pr checks <pr_number> --json name,state,bucket,link,required
+```
+
+- Only act on checks for the **HEAD commit** — verify via `headRefOid`.
 - **Fix failures immediately** — don't wait for all checks to finish. If some checks have already failed while others are still pending, fix the failed ones right away. The push will trigger a fresh CI run for everything anyway.
 - For each **failing** check (required and optional):
   1. Get logs: `gh run view <run-id> --log-failed`
@@ -104,11 +103,7 @@ gh pr checks --json name,state,bucket,link,required
 - If checks are `pending` or `in_progress`, note how long they've been running (use `gh run view <run-id> --json createdAt`) to inform sleep interval.
 - Optional check failures are best-effort — fix them if possible, but they do not block the exit condition.
 
-### 4. Process Review Comments
-
-Fetch **both** review threads (inline comments) **and** general review comments (top-level review bodies not tied to specific lines).
-
-#### 4a. Inline Review Threads
+#### 3b. Inline Review Threads
 
 ```bash
 gh api graphql -f query='
@@ -130,7 +125,7 @@ gh api graphql -f query='
 '
 ```
 
-#### 4b. General Review Comments
+#### 3c. General Review Comments
 
 These are top-level review comments — the body text of a review submission, not tied to any specific file or line. They often contain important high-level feedback, architectural concerns, or summary requests.
 
@@ -164,17 +159,29 @@ For general review comments, reply using the appropriate API:
 - Review comments: `gh api repos/{owner}/{repo}/pulls/{pr}/reviews/{review_id}/comments` or reply to the review
 - Issue comments: `gh api repos/{owner}/{repo}/issues/{pr}/comments -f body="..."`
 
-### 5. Verify and Push
+### 4. Fix Issues Bottom-Up
 
-If any code changes were made:
+When issues are found across multiple PRs in the stack, **always fix the lowest branch first**. A fix in a lower branch may resolve issues in higher branches after restacking.
 
-1. **Run local verification** — test, lint, typecheck commands per the project's CLAUDE.md/AGENTS.md
-2. **If passing:** commit and push using `working-with-graphite` skill:
-   - `gt modify --commit` (amends onto existing branch)
-   - `gt submit`
-3. **If failing:** Do not push. Log the failure — next loop iteration will retry.
+**Important: only push once per loop iteration.** Apply all fixes locally, then push the entire stack at the end.
 
-### 6. Sleep Interval Logic
+For each branch with issues (bottom to top):
+
+1. **Checkout the branch:** `gt checkout <branch>`
+2. **Fix all CI failures and review comments for that branch** (per step 3 rules)
+3. **Run targeted local verification** — lint and typecheck the changed files, and run only the tests that exercise the changed code (not the full suite). Use the project's CLAUDE.md/AGENTS.md to determine how to run scoped tests (e.g., passing specific test files, directories, or filter patterns). If verification fails, fix the issue and re-verify until it passes.
+4. **Commit locally:** `gt modify --commit`
+5. **Restack** so higher branches pick up the changes: `gt restack`
+6. Continue to the next branch with issues
+
+After all branches have been fixed:
+
+7. **Push the entire stack once:**
+   ```bash
+   gt submit --stack
+   ```
+
+### 5. Sleep Interval Logic
 
 After each iteration, choose a sleep duration based on current state:
 
@@ -188,22 +195,22 @@ After each iteration, choose a sleep duration based on current state:
 | All CI green, waiting on reviewer | **10 minutes** | Human response times are slower |
 | No actionable items but PR not fully ready | **5 minutes** | Default polling interval |
 
+When babysitting a stack, base the interval on the **most urgent** situation across all PRs (i.e., use the shortest applicable sleep).
+
 Print the chosen interval and reason before sleeping: `"Sleeping {N} minutes — {reason}"`
 
 Use shell `sleep` for the wait (e.g., `sleep 300` for 5 minutes).
 
-### 7. Exit Condition
+### 6. Exit Condition
 
-The PR is ready when:
-- All **required** CI checks are passing on HEAD
-- All review threads are either resolved OR have a babysitter reply as the last comment
-- All general review comments have been addressed (babysitter reply exists)
+**All PRs in the stack** are ready when:
+- All **required** CI checks are passing on HEAD for every PR
+- All review threads across all PRs are either resolved OR have a babysitter reply as the last comment
+- All general review comments across all PRs have been addressed (babysitter reply exists)
 
-Optional check failures do **not** block this exit condition. If optional checks are still failing when the exit condition is met, note them in the output but still declare the PR ready.
+Optional check failures do **not** block this exit condition. If optional checks are still failing when the exit condition is met, note them in the output but still declare the stack ready.
 
-Print: **"All required checks passing and all review comments addressed. PR is ready."**
-
-Release the lock and exit.
+Print: **"All required checks passing and all review comments addressed across the stack. PRs are ready."**
 
 ## Common Mistakes
 
@@ -213,3 +220,7 @@ Release the lock and exit.
 - **Resolving threads you shouldn't** — Only resolve threads where you fixed a real issue. Leave scope-change and non-issue threads open for the reviewer.
 - **Missing general review comments** — Don't only check inline threads. Always also fetch top-level review bodies and issue comments — reviewers often put their most important feedback there.
 - **Sleeping too long after pushing** — After pushing a fix, use a short interval so you catch CI results quickly.
+- **Fixing the wrong branch in a stack** — Always fix the lowest branch that has the issue. Fixing higher up can cause merge conflicts or get overwritten by a restack.
+- **Pushing multiple times per loop** — Fix all branches locally first (`gt modify --commit` + `gt restack` for each), then push once with `gt submit --stack`. Multiple pushes waste CI cycles and create race conditions.
+- **Forgetting to restack after fixing** — After modifying a branch in the middle of a stack, always `gt restack` before moving to the next branch so higher branches pick up the changes.
+- **Assuming higher branches are unaffected** — After fixing and restacking, re-check all PRs from scratch. The restack may introduce new CI failures in higher branches.
