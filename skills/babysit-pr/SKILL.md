@@ -84,7 +84,9 @@ If no PRs exist for any branch, print an error and exit.
 
 ### 3. Check CI and Reviews Across All PRs
 
-For **each PR** in the stack (processing bottom-up), run the CI and review checks described in steps 4a–4c below.
+**Use sub-agents for parallel status collection.** Dispatch one sub-agent per PR to fetch CI status, review threads, and general comments concurrently. Each sub-agent runs the checks from steps 3a–3c for its assigned PR and returns a structured summary of issues. This keeps the main context clean and avoids sequential API calls across the stack.
+
+Similarly, when investigating failing checks, dispatch a sub-agent per failing run to fetch logs (`gh run view <run-id> --log-failed`) and analyze the root cause. CI logs are verbose — isolating them in sub-agents prevents context pollution.
 
 Collect all issues into a list tagged by branch, so you know which branch to fix first. Then fix bottom-up per step 4.
 
@@ -224,3 +226,4 @@ Print: **"All required checks passing and all review comments addressed across t
 - **Pushing multiple times per loop** — Fix all branches locally first (`gt modify --commit` + `gt restack` for each), then push once with `gt submit --stack`. Multiple pushes waste CI cycles and create race conditions.
 - **Forgetting to restack after fixing** — After modifying a branch in the middle of a stack, always `gt restack` before moving to the next branch so higher branches pick up the changes.
 - **Assuming higher branches are unaffected** — After fixing and restacking, re-check all PRs from scratch. The restack may introduce new CI failures in higher branches.
+- **Fetching PR status and logs sequentially in the main context** — Use sub-agents to check each PR's CI/reviews in parallel and to fetch verbose CI logs. This speeds up each loop iteration and keeps the main context window clean for decision-making and code fixes.
